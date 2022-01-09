@@ -1,0 +1,13 @@
+/dist/demo.html
+/docs/icon
+/public
+/src/App.vue
+/src/main.js
+
+.browserslistrc
+.eslintrc.js
+.prettierrc.js
+
+babel.config.js
+package-lock.json
+vue.config.js

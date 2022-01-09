@@ -1,0 +1,63 @@
+{
+  "name": "vue-live-talk",
+  "version": "0.0.1",
+  "description": "JT/T 1078 voice intercom uses websocket",
+  "private": false,
+  "main": "dist/vue-live-talk.umd.js",
+  "unpkg": "dist/vue-live-talk.umd.min.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lin557/vue-live-talk"
+  },
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6"
+  },
+  "author": "lin557",
+  "license": "MIT",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "build-bundle": "vue-cli-service build --target lib --name vue-live-talk ./src/index.js",
+    "build-publish": "vue-cli-service build --target lib --name vue-live-talk ./src/index.js && npm publish"
+  },
+  "dependencies": {
+    "core-js": "^3.6.5",
+    "vue": "^2.6.11"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "@vue/eslint-config-prettier": "^6.0.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-vue": "^6.2.2",
+    "prettier": "^2.2.1",
+    "sass": "^1.26.5",
+    "sass-loader": "^8.0.2",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended",
+      "@vue/prettier"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
