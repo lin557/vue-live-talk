@@ -28,6 +28,9 @@
       </svg>
     </div>
     <div class="vlt-wave" ref="wave"></div>
+    <div class="vlt-volume">
+      <input type="range" min="0.0" max="1.0" step="0.01" v-model="volume" />
+    </div>
     <div class="vlt-runlog">{{ runlog }}</div>
     <div class="vlt-player"></div>
   </div>
@@ -161,8 +164,8 @@ export default {
           connecting: '连接中',
           connected: '已连接(等待设备语音)',
           disconnected: '已断开',
+          init: '未启动',
           talking: '通话中',
-          permission: '需要麦克风权限',
           noAllow: '用户拒绝录音权限',
           noMic: '无可用麦克风',
           errHttps: '无权录音(需https)',
@@ -177,6 +180,15 @@ export default {
       }
     },
     /**
+     * 传输模式
+     * 0=二进制
+     * 1=字符串
+     */
+    mode: {
+      type: Number,
+      default: 0
+    },
+    /**
      * 采样率
      * mp3 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
      * wav 任意
@@ -188,17 +200,19 @@ export default {
   },
   data() {
     return {
+      bitRate: 16,
+      options: DEFAULTS,
+      otherError: '',
+      player: null,
+      sendTime: 0,
+      sendChunk: null,
+      showDialog: false,
       socket: null,
       status: 0,
       recorder: null,
-      player: null,
-      wave: null,
-      showDialog: false,
-      options: DEFAULTS,
-      bitRate: 16,
-      sendTime: 0,
-      sendChunk: null,
-      otherError: ''
+      // 音量 取值 0 - 2.0
+      volume: 0.5,
+      wave: null
     }
   },
   computed: {
@@ -206,7 +220,7 @@ export default {
       let ret = ''
       switch (this.status) {
         case 0:
-          ret = this.local.permission
+          ret = this.local.init
           break
         case 1:
           ret = this.local.connecting
@@ -265,6 +279,22 @@ export default {
       return window.btoa(output.join(''))
     },
     /**
+     * 关闭对讲
+     */
+    close() {
+      if (this.player) {
+        this.player.stop()
+        this.player = null
+      }
+      if (this.socket) {
+        this.socket.close()
+        this.socket = null
+      }
+      this.recordStop()
+      this.recordClose()
+      this.status = 0
+    },
+    /**
      * 创建录音对象
      */
     createRecord() {
@@ -272,6 +302,7 @@ export default {
         type: MEDIA_TYPE,
         sampleRate: this.sampleRate,
         bitRate: this.bitRate,
+        // audioTrackSet: { echoCancellation: true, noiseSuppression: true },
         onProcess: (
           buffers,
           powerLevel,
@@ -281,8 +312,7 @@ export default {
           asyncEnd
         ) => {
           // 输入音频数据，更新显示波形
-          // console.log(powerLevel)
-          this.wave.input(
+          this.drawWave(
             buffers[buffers.length - 1],
             powerLevel,
             bufferSampleRate
@@ -349,7 +379,13 @@ export default {
         // 注意ws、wss使用不同的端口。我使用自签名的证书测试，
         // 无法使用wss，浏览器打开WebSocket时报错
         // ws对应http、wss对应https。
-        this.socket = new WebSocket(this.options.url + '/' + this.options.imei)
+        this.socket = new WebSocket(
+          this.options.url +
+            '/' +
+            this.options.imei +
+            '?codec=pcm&sample_rate=' +
+            this.sampleRate
+        )
         // 连接打开事件
         this.socket.onopen = () => {
           this.status = 2
@@ -372,6 +408,11 @@ export default {
           this.status = 4
         }
       }
+    },
+    drawWave(buffer, powerLevel, bufferSampleRate) {
+      // 复制一次 防止调整音量后影响波形显示
+      const newbuf = Int16Array.from(buffer)
+      this.wave.input(newbuf, powerLevel, bufferSampleRate)
     },
     /**
      * 播放实时流
@@ -427,6 +468,9 @@ export default {
       // asyncEnd
     ) {
       this.sendChunk = null
+      // 调整音量
+      const newBuf = buffers
+      this.scaleSamples(newBuf[0], 0, newBuf[0].length, this.volume)
       // 借用SampleData函数进行数据的连续处理，采样率转换是顺带的
       const chunk = Recorder.SampleData(
         buffers,
@@ -526,8 +570,27 @@ export default {
       }
       this.recorder.stop()
     },
+    /**
+     * 音量调节
+     */
+    scaleSamples(samples, position, numSamples, volume) {
+      const numChannels = 1
+      const fixedPointVolume = Math.floor(volume * 4096.0)
+      const start = position * numChannels
+      const stop = start + numSamples * numChannels
+
+      for (let xSample = start; xSample < stop; xSample++) {
+        let value = (samples[xSample] * fixedPointVolume) >> 12
+        if (value > 32767) {
+          value = 32767
+        } else if (value < -32767) {
+          value = -32767
+        }
+        samples[xSample] = value
+      }
+    },
     talk(opts) {
-      this.url = opts.url
+      this.close()
       this.recordOpen()
     },
     /**
@@ -535,9 +598,13 @@ export default {
      */
     transferUpload(buffer) {
       if (buffer) {
-        // 转化后的base64
-        const base64 = this.arrayBufferToBase64(buffer)
-        this.uploadAudio(base64)
+        if (this.mode === 0) {
+          this.socket.send(buffer)
+        } else {
+          // 转化后的base64
+          const base64 = this.arrayBufferToBase64(buffer)
+          this.uploadAudio(base64)
+        }
       }
     },
     uploadAudio(baseStr) {
@@ -569,19 +636,10 @@ export default {
   created() {},
   mounted() {
     this.createRecord()
-    this.recordOpen()
+    // this.recordOpen()
   },
   beforeDestroy() {
-    if (this.player) {
-      this.player.stop()
-      this.player = null
-    }
-    if (this.socket) {
-      this.socket.close()
-      this.socket = null
-    }
-    this.recordStop()
-    this.recordClose()
+    this.close()
   },
   destroyed() {
     // 销毁已持有的所有全局资源
@@ -593,7 +651,7 @@ export default {
 .vlt-wrapper {
   position: relative;
   width: 160px;
-  height: 180px;
+  height: 200px;
   padding: 10px;
   box-sizing: border-box;
   border: 1px solid #ccc;
@@ -620,6 +678,13 @@ export default {
     width: 100%;
     height: 30px;
     line-height: 30px;
+  }
+
+  .vlt-volume {
+    width: 100%;
+    input {
+      width: 100%;
+    }
   }
 }
 </style>
