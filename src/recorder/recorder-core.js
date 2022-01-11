@@ -278,10 +278,13 @@ Recorder.PowerLevel=function(pcmAbsSum,pcmLength){
 };
 
 
-
+Recorder.showLog = false;
 
 //带时间的日志输出，CLog(msg,errOrLogMsg, logMsg...) err为数字时代表日志类型1:error 2:log默认 3:warn，否则当做内容输出，第一个参数不能是对象因为要拼接时间，后面可以接无数个输出参数
 var CLog=function(msg,err){
+	if (!Recorder.showLog) {
+		return
+	}
 	var now=new Date();
 	var t=("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2)
@@ -306,11 +309,7 @@ Recorder.CLog=CLog;
 
 var ID=0;
 function initFn(set){
-	this.id=++ID;
-	
-	//如果开启了流量统计，这里将发送一个图片请求
-	Recorder.Traffic&&Recorder.Traffic();
-	
+	this.id=++ID;	
 	
 	var o={
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
@@ -921,32 +920,5 @@ window.Recorder=Recorder;
 
 //end ****copy源码结束*****
 Recorder.LM=LM;
-
-//流量统计用1像素图片地址，设置为空将不参与统计
-Recorder.TrafficImgUrl="//ia.51.la/go1?id=20469973&pvFlag=1";
-Recorder.Traffic=function(){
-	var imgUrl=Recorder.TrafficImgUrl;
-	if(imgUrl){
-		var data=Recorder.Traffic;
-		var idf=location.href.replace(/#.*/,"");
-		
-		if(imgUrl.indexOf("//")==0){
-			//给url加上http前缀，如果是file协议下，不加前缀没法用
-			if(/^https:/i.test(idf)){
-				imgUrl="https:"+imgUrl;
-			}else{
-				imgUrl="http:"+imgUrl;
-			};
-		};
-		
-		if(!data[idf]){
-			data[idf]=1;
-			
-			var img=new Image();
-			img.src=imgUrl;
-			CLog("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
-		};
-	};
-};
 
 }));

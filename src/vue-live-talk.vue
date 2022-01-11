@@ -34,15 +34,13 @@
 </template>
 <script>
 // 必须引入的核心，换成require也是一样的。注意：recorder-core会自动往window下挂载名称为Recorder对象，全局可调用window.Recorder，也许可自行调整相关源码清除全局污染
-import Recorder from './recorder-core/recorder-core'
+import Recorder from './recorder/recorder-core'
 
 // 可选的扩展支持项
-import './recorder-core/extensions/frequency.histogram.view'
-import './recorder-core/extensions/lib.fft'
+import './recorder/extensions/frequency.histogram.view'
+import './recorder/extensions/lib.fft'
 // 实时流播放器
-import './recorder-core/extensions/buffer_stream.player'
-// 禁用插件里的流量统计
-Recorder.TrafficImgUrl = null
+import './recorder/extensions/buffer_stream.player'
 
 /**
  * Get the keys of an Object
@@ -148,8 +146,8 @@ const MEDIA_TYPE = 'pcm'
 
 const DEFAULTS = {
   url: 'ws://localhost:9095/ws/talk',
-  imei: '12345',
-  chn: 0
+  imei: '15981010784',
+  chn: 1
 }
 
 export default {
@@ -161,22 +159,22 @@ export default {
         return {
           cancel: '忽略',
           connecting: '连接中',
-          connected: '已连接(等待设备上传)',
+          connected: '已连接(等待设备语音)',
           disconnected: '已断开',
           talking: '通话中',
           permission: '需要麦克风权限',
-          errNoAllow: '用户拒绝录音权限',
-          errNoMic: '无可用麦克风',
+          noAllow: '用户拒绝录音权限',
+          noMic: '无可用麦克风',
           errHttps: '无权录音(需https)',
           errCross: '无权录音(跨域)',
           errSupport: '此浏览器不支持录音',
-          errSocket: '连接错误'
+          errSocket: '连接错误',
+          error: '错误',
+          busy: '设备繁忙',
+          timeout: '终端超时',
+          errCodec: '不支持编码'
         }
       }
-    },
-    interval: {
-      type: Number,
-      default: 200
     },
     /**
      * 采样率
@@ -223,7 +221,7 @@ export default {
           ret = this.local.errSocket
           break
         case 5:
-          ret = this.local.errNoAllow
+          ret = this.local.noAllow
           break
         case 6:
           ret = this.local.talking
@@ -235,11 +233,22 @@ export default {
           ret = this.local.errHttps
           break
         case 9:
-          ret = this.local.errNoMic
+          ret = this.local.noMic
           break
         case 99:
-          ret = this.otherError
+          ret = this.local.error
           break
+        case 3000:
+          ret = this.local.error
+          break
+        case 3001:
+          ret = this.local.timeout
+          break
+        case 3002:
+          ret = this.local.busy
+          break
+        case 3003:
+          ret = this.local.errCodec
       }
       return ret
     }
@@ -318,7 +327,7 @@ export default {
         }
       })
       // 切换成了实时模式，如果缓冲中积压的未播放数据量过大，会直接丢弃数据或者加速播放，达到尽快播放新输入的数据的目的，可有效降低播放延迟
-      // this.player.set.realtime = true
+      this.player.set.realtime = true
       // 打开
       this.player.start(
         () => {},
@@ -340,7 +349,7 @@ export default {
         // 注意ws、wss使用不同的端口。我使用自签名的证书测试，
         // 无法使用wss，浏览器打开WebSocket时报错
         // ws对应http、wss对应https。
-        this.socket = new WebSocket(this.options.url)
+        this.socket = new WebSocket(this.options.url + '/' + this.options.imei)
         // 连接打开事件
         this.socket.onopen = () => {
           this.status = 2
@@ -352,13 +361,14 @@ export default {
         }
         // 连接关闭事件
         this.socket.onclose = (e) => {
-          this.status = 3
-          // window.console.log(
-          //   'Socket关闭 code=' + e.code + ', reason=' + e.reason
-          // )
+          if (e.code > 2999) {
+            this.status = e.code
+          } else {
+            this.status = 3
+          }
         }
         // 发生了错误事件
-        this.socket.onerror = () => {
+        this.socket.onerror = (e) => {
           this.status = 4
         }
       }
@@ -369,7 +379,7 @@ export default {
     playBuffer(arrayBuffer, sampleRate) {
       // 创建播放器
       if (this.player == null) {
-        this.createPlayer(8000)
+        this.createPlayer(sampleRate)
       }
       if (this.player) {
         this.player.input(arrayBuffer)
@@ -416,17 +426,7 @@ export default {
       newBufferIdx
       // asyncEnd
     ) {
-      const currentTime = Date.now()
-      if (this.sendTime === 0) {
-        this.sendTime = currentTime
-        this.sendChunk = null
-      }
-      if (currentTime - this.sendTime < this.interval) {
-        // 控制缓冲达到指定间隔才进行传输
-        return
-      }
-      this.sendTime = currentTime
-
+      this.sendChunk = null
       // 借用SampleData函数进行数据的连续处理，采样率转换是顺带的
       const chunk = Recorder.SampleData(
         buffers,
@@ -436,21 +436,16 @@ export default {
         { frameType: MEDIA_TYPE }
       )
 
-      //清理已处理完的缓冲数据，释放内存以支持长时间录音，最后完成录音时不能调用stop，因为数据已经被清掉了
-      for (
-        let i = this.sendChunk ? this.sendChunk.index : 0;
-        i < chunk.index;
-        i++
-      ) {
-        this.recorder.buffers[i] = null
-      }
+      // 清理已处理完的缓冲数据，释放内存以支持长时间录音，最后完成录音时不能调用stop，因为数据已经被清掉了
+      this.recorder.buffers = []
       // 此时的chunk.data就是原始的音频pcm数据，直接保存即为pcm文件、加个wav头即为wav文件、丢给mp3编码器转一下码即为mp3文件
-      this.sendChunk = chunk
+      // this.sendChunk = chunk
 
       // 没有新数据，或结束时的数据量太小，不能进行mock转码
-      if (chunk.data.length === 0 || chunk.data.length < 2000) {
+      if (chunk.data.length === 0) {
         return
       }
+      // console.log(chunk.data)
       const data = new Uint8Array(chunk.data.buffer)
       // console.log(data)
       this.transferUpload(data)
@@ -554,9 +549,9 @@ export default {
             time: new Date().getTime()
           },
           data: {
-            imei: '15981010784',
+            imei: this.options.imei,
             // 默认第一通道
-            chn: 1,
+            chn: this.options.chn,
             // eslint-disable-next-line camelcase
             codec: MEDIA_TYPE,
             // eslint-disable-next-line camelcase
