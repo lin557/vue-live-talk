@@ -160,22 +160,22 @@ export default {
       type: Object,
       default() {
         return {
+          busy: '设备繁忙',
           cancel: '忽略',
           connecting: '连接中',
           connected: '已连接(等待设备语音)',
           disconnected: '已断开',
+          error: '错误',
+          errCodec: '不支持的编码',
+          errCross: '无权录音(跨域)',
+          errHttps: '无权录音(需https)',
+          errSocket: '连接错误',
+          errSupport: '此浏览器不支持录音',
           init: '未启动',
-          talking: '通话中',
           noAllow: '用户拒绝录音权限',
           noMic: '无可用麦克风',
-          errHttps: '无权录音(需https)',
-          errCross: '无权录音(跨域)',
-          errSupport: '此浏览器不支持录音',
-          errSocket: '连接错误',
-          error: '错误',
-          busy: '设备繁忙',
-          timeout: '终端超时',
-          errCodec: '不支持编码'
+          talking: '通话中',
+          timeout: '终端超时'
         }
       }
     },
@@ -599,6 +599,7 @@ export default {
       }
     },
     talk(opts) {
+      this.options = mergeOptions(this.options, opts)
       this.close()
       this.recordOpen()
     },

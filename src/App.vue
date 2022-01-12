@@ -4,7 +4,7 @@
       <vue-live-talk
         :sampleRate="sampleRateValue"
         :mode="modeValue"
-        ref="recorder"
+        ref="talk"
       />
     </div>
     <div class="around">
@@ -89,7 +89,7 @@ export default {
   },
   methods: {
     talk() {
-      this.$refs.recorder.talk({
+      this.$refs.talk.talk({
         url: this.url,
         imei: this.imei,
         chn: this.chn
@@ -98,7 +98,7 @@ export default {
     },
     close() {
       this.disabled = false
-      this.$refs.recorder.close()
+      this.$refs.talk.close()
     }
   }
 }
