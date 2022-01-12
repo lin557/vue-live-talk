@@ -2,7 +2,7 @@
   <div id="app">
     <div class="center">
       <vue-live-talk
-        :sampleRate="sample_rate"
+        :sampleRate="sampleRateValue"
         :mode="modeValue"
         ref="recorder"
       />
@@ -71,6 +71,9 @@ export default {
   computed: {
     modeValue() {
       return parseInt(this.mode)
+    },
+    sampleRateValue() {
+      return parseInt(this.sample_rate)
     }
   },
   data() {
@@ -81,7 +84,7 @@ export default {
       chn: 1,
       url: 'ws://localhost:9095/ws/talk',
       // eslint-disable-next-line camelcase
-      sample_rate: 16000
+      sample_rate: 8000
     }
   },
   methods: {
@@ -151,7 +154,7 @@ export default {
   margin-left: 10px;
   margin-right: 0px;
   input {
-    margin-right: 10px;
+    margin-right: 12px;
   }
 }
 </style>

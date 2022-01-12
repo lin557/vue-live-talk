@@ -195,7 +195,7 @@ export default {
      */
     sampleRate: {
       type: Number,
-      default: 16000
+      default: 8000
     }
   },
   data() {
@@ -268,9 +268,6 @@ export default {
     }
   },
   methods: {
-    base64ToArrayBuffer(base64) {
-      return Buffer.from(base64, 'base64').buffer
-    },
     arrayBufferToBase64(uint8array) {
       const output = []
       for (let i = 0, { length } = uint8array; i < length; i++) {
@@ -278,10 +275,13 @@ export default {
       }
       return window.btoa(output.join(''))
     },
+    base64ToArrayBuffer(base64) {
+      return Buffer.from(base64, 'base64').buffer
+    },
     /**
      * 关闭对讲
      */
-    close() {
+    close(no) {
       if (this.player) {
         this.player.stop()
         this.player = null
@@ -292,7 +292,9 @@ export default {
       }
       this.recordStop()
       this.recordClose()
-      this.status = 0
+      if (no === false || no === undefined) {
+        this.status = 0
+      }
     },
     /**
      * 创建录音对象
@@ -418,6 +420,7 @@ export default {
      * 播放实时流
      */
     playBuffer(arrayBuffer, sampleRate) {
+      this.status = 6
       // 创建播放器
       if (this.player == null) {
         this.createPlayer(sampleRate)
@@ -427,34 +430,40 @@ export default {
       }
     },
     processMsg(msg) {
-      if (msg === null || msg.length < 10) {
+      if (msg === null) {
         return
       }
-      let dataMsg
-      try {
-        dataMsg = JSON.parse(msg)
-      } catch (err) {
-        window.console.log(err)
-        return
+      if (this.mode === 0) {
+        // blob 转 ArrayBuffer
+        msg.arrayBuffer().then((buffer) => {
+          this.playBuffer(buffer, this.sampleRate)
+        })
+      } else {
+        let dataMsg
+        try {
+          dataMsg = JSON.parse(msg)
+        } catch (err) {
+          window.console.log(err)
+          return
+        }
+        if (
+          dataMsg === null ||
+          dataMsg.header === null ||
+          dataMsg.data === null ||
+          dataMsg.data.buffer === null ||
+          dataMsg.header.cmd !== 'MSG_GATEWAY_CLIENT_TALK_STREAM'
+        ) {
+          return
+        }
+        // console.log(this.serverSampleRate)
+        let base64 = dataMsg.data.buffer
+        // 处理以 data:audio/mp3;base64,//MoxAAL+... 开头的数据
+        if (base64.split(',').length > 1) {
+          base64 = base64.split(',')[1]
+        }
+        const buffer = this.base64ToArrayBuffer(base64)
+        this.playBuffer(buffer, dataMsg.data.sample_rate)
       }
-      if (
-        dataMsg === null ||
-        dataMsg.header === null ||
-        dataMsg.data === null ||
-        dataMsg.data.buffer === null ||
-        dataMsg.header.cmd !== 'MSG_GATEWAY_CLIENT_TALK_STREAM'
-      ) {
-        return
-      }
-      this.status = 6
-      // console.log(this.serverSampleRate)
-      let base64 = dataMsg.data.buffer
-      // 处理以 data:audio/mp3;base64,//MoxAAL+... 开头的数据
-      if (base64.split(',').length > 1) {
-        base64 = base64.split(',')[1]
-      }
-      const buffer = this.base64ToArrayBuffer(base64)
-      this.playBuffer(buffer, dataMsg.data.sample_rate)
     },
     /**
      * 实时处理时清理一下内存（延迟清理），本方法先于RealTimeSendTry执行
@@ -597,7 +606,8 @@ export default {
      * 上传
      */
     transferUpload(buffer) {
-      if (buffer) {
+      // Socket.readyState，0 - 表示连接尚未建立，1 - 表示连接已建立，可以进行通信，2 - 表示连接正在进行关闭，3 - 表示连接已经关闭或者连接不能打开
+      if (buffer && this.socket && this.socket.readyState === 1) {
         if (this.mode === 0) {
           this.socket.send(buffer)
         } else {
@@ -608,28 +618,32 @@ export default {
       }
     },
     uploadAudio(baseStr) {
-      // Socket.readyState，0 - 表示连接尚未建立，1 - 表示连接已建立，可以进行通信，2 - 表示连接正在进行关闭，3 - 表示连接已经关闭或者连接不能打开
-      if (this.socket && this.socket.readyState === 1) {
-        const dataMsg = {
-          header: {
-            cmd: 'MSG_GATEWAY_CLIENT_TALK_STREAM',
-            time: new Date().getTime()
-          },
-          data: {
-            imei: this.options.imei,
-            // 默认第一通道
-            chn: this.options.chn,
-            // eslint-disable-next-line camelcase
-            codec: MEDIA_TYPE,
-            // eslint-disable-next-line camelcase
-            sample_rate: this.sampleRate,
-            // eslint-disable-next-line camelcase
-            sample_format: this.bitRate / 8 - 1,
-            buffer: baseStr
-          }
+      const dataMsg = {
+        header: {
+          cmd: 'MSG_GATEWAY_CLIENT_TALK_STREAM',
+          time: new Date().getTime()
+        },
+        data: {
+          imei: this.options.imei,
+          // 默认第一通道
+          chn: this.options.chn,
+          // eslint-disable-next-line camelcase
+          codec: MEDIA_TYPE,
+          // eslint-disable-next-line camelcase
+          sample_rate: this.sampleRate,
+          // eslint-disable-next-line camelcase
+          sample_format: this.bitRate / 8 - 1,
+          buffer: baseStr
         }
-        const json = JSON.stringify(dataMsg)
-        this.socket.send(json)
+      }
+      const json = JSON.stringify(dataMsg)
+      this.socket.send(json)
+    }
+  },
+  watch: {
+    status(val) {
+      if (val > 2999) {
+        this.close(true)
       }
     }
   },
