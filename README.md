@@ -123,7 +123,7 @@ export default {
 
 ### talk(param)
 
-Apply for an idle view and occupy it to display the loading effect
+connect and talk
 
 ```
 param = {
@@ -141,145 +141,12 @@ param = {
 
 
 
-### clear()
+### close()
 
-Close all video players that are playing
-
-
-
-### getPlaying(unique)
-
-The player object corresponding to the specified identifier. About **unique** param , Specified by the **options.data.unique** parameter of the play() method, if not specified, the file name in options.src is used by default.
-
-
-
-### getSelected()
-
-Returns the currently selected player object
-
-
-
-### getUserData(unique)
-
-About **unique** param , Specified by the **options.data.unique** parameter of the play() method. Return **options.data.user**
-
-
-
-### mute()
-
-Mute all players
-
-
-
-### play(options) 
-
-Play video, The options object format is as follows:
-
-| Property  | Description                                                  | Type    | Default                                        |
-| --------- | ------------------------------------------------------------ | ------- | ---------------------------------------------- |
-| content   | Context menu                                                 | array   | null                                           |
-| data      | user data                                                    | object  | {<br />unique: filename<br />user: null<br />} |
-| hasAudio  | With audio                                                   | boolean | true                                           |
-| isLive    | Specify whether the current video stream is a real-time stream or a file stream<br />If true, the playback rate will be adjusted according to the buffer size | boolean | true                                           |
-| text      | Display customized text message, Default display file name.<br /> It was "info" before 1.2.6 | string  | null                                           |
-| record    | Record control parameters(Does not support rtmp/m3u8)        | object  | {<br />enabled: true,<br />isLive: true<br />} |
-| src       | Media source                                                 | string  | -                                              |
-| viewIndex | View index, If it is >= 0, the video will be played in the specified window | number  | null                                           |
-
-
-
-The format of the **content** array parameter is as follows:
-
-```js
-content: [
-  {
-    // A plain old link.
-    href: 'https://www.brightcove.com/',
-    label: 'Brightcove'
-  },
-  {
-    // A link with a listener. Its `href` will automatically be `#`.
-    label: 'Example Link',
-    listener: function () {
-      alert('you clicked the example link!')
-    }
-  }
-]
-```
-
-
-
-The format of the **data** object parameter is as follows:
-
-```
-{
-  unique: filename,
-  user: null
-}
-```
-
-
-
-### splitView(uCount)
-
-Modify the number of video players.
-
-Type: number, Only the following values are supported: 1, 4, 6, 8, 9, 10, 16, 25, 36, 64
-
-
-
-### stop()
-
-Stop a video player that is playing
-
-
-
-### togglefill()
-
-Switch whether the video screen is full
-
-
-
-## Events
-
-
-
-### error
-
-Triggered when there is an error in playing flv
-
-error(player, errType, errDetails, e)
-
-
+Close talk
 
 
 
 ## License
 
 MIT. Copyright (c) lin557
-
-
-
-## Project setup
-
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

@@ -33,6 +33,8 @@
           :disabled="disabled"
         />
       </div>
+    </div>
+    <div class="around">
       <div class="mode">
         <label for="mode">Binary</label>
         <input
@@ -123,12 +125,15 @@ export default {
 .around {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 18px;
 
   button {
     margin-left: 5px;
     margin-right: 5px;
+  }
+
+  input {
+    padding: 5px;
   }
 }
 
@@ -145,7 +150,7 @@ export default {
   margin-left: 5px;
   margin-right: 5px;
   input {
-    width: 300px;
+    width: 280px;
     margin-left: 10px;
   }
 }

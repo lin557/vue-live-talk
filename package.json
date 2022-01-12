@@ -1,7 +1,7 @@
 {
   "name": "vue-live-talk",
   "version": "0.0.1",
-  "description": "JT/T 1078 voice intercom uses websocket",
+  "description": "JT/T 1078 voice talk uses websocket",
   "private": false,
   "main": "dist/vue-live-talk.umd.js",
   "unpkg": "dist/vue-live-talk.umd.min.js",

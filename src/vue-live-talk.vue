@@ -304,7 +304,7 @@ export default {
         type: MEDIA_TYPE,
         sampleRate: this.sampleRate,
         bitRate: this.bitRate,
-        // audioTrackSet: { echoCancellation: true, noiseSuppression: true },
+        audioTrackSet: { echoCancellation: true, noiseSuppression: true },
         onProcess: (
           buffers,
           powerLevel,
