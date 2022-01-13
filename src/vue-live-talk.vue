@@ -51,7 +51,7 @@ const MEDIA_TYPE = 'pcm'
 
 const DEFAULTS = {
   url: 'ws://localhost:9090/ws/talk',
-  imei: '15981010784',
+  imei: '10007012346',
   chn: 1
 }
 
@@ -77,18 +77,10 @@ export default {
           noAllow: '用户拒绝录音权限',
           noMic: '无可用麦克风',
           talking: '通话中',
-          timeout: '终端超时'
+          timeout: '终端超时',
+          killout: '会话冲突'
         }
       }
-    },
-    /**
-     * 传输模式
-     * 0=二进制
-     * 1=字符串
-     */
-    mode: {
-      type: Number,
-      default: 0
     },
     /**
      * 采样率
@@ -165,21 +157,15 @@ export default {
           break
         case 3003:
           ret = this.local.errCodec
+          break
+        case 3004:
+          ret = this.local.killout
+          break
       }
       return ret
     }
   },
   methods: {
-    arrayBufferToBase64(uint8array) {
-      const output = []
-      for (let i = 0, { length } = uint8array; i < length; i++) {
-        output.push(String.fromCharCode(uint8array[i]))
-      }
-      return window.btoa(output.join(''))
-    },
-    base64ToArrayBuffer(base64) {
-      return Buffer.from(base64, 'base64').buffer
-    },
     /**
      * 关闭对讲
      */
@@ -261,7 +247,7 @@ export default {
         }
       })
       // 切换成了实时模式，如果缓冲中积压的未播放数据量过大，会直接丢弃数据或者加速播放，达到尽快播放新输入的数据的目的，可有效降低播放延迟
-      this.player.set.realtime = true
+      // this.player.set.realtime = true
       // 打开
       this.player.start(
         () => {},
@@ -335,37 +321,10 @@ export default {
       if (msg === null) {
         return
       }
-      if (this.mode === 0) {
-        // blob 转 ArrayBuffer
-        msg.arrayBuffer().then((buffer) => {
-          this.playBuffer(buffer, this.sampleRate)
-        })
-      } else {
-        let dataMsg
-        try {
-          dataMsg = JSON.parse(msg)
-        } catch (err) {
-          window.console.log(err)
-          return
-        }
-        if (
-          dataMsg === null ||
-          dataMsg.header === null ||
-          dataMsg.data === null ||
-          dataMsg.data.buffer === null ||
-          dataMsg.header.cmd !== 'MSG_GATEWAY_CLIENT_TALK_STREAM'
-        ) {
-          return
-        }
-        // console.log(this.serverSampleRate)
-        let base64 = dataMsg.data.buffer
-        // 处理以 data:audio/mp3;base64,//MoxAAL+... 开头的数据
-        if (base64.split(',').length > 1) {
-          base64 = base64.split(',')[1]
-        }
-        const buffer = this.base64ToArrayBuffer(base64)
-        this.playBuffer(buffer, dataMsg.data.sample_rate)
-      }
+      // blob 转 ArrayBuffer
+      msg.arrayBuffer().then((buffer) => {
+        this.playBuffer(buffer, this.sampleRate)
+      })
     },
     /**
      * 实时处理时清理一下内存（延迟清理），本方法先于RealTimeSendTry执行
@@ -511,36 +470,8 @@ export default {
     transferUpload(buffer) {
       // Socket.readyState，0 - 表示连接尚未建立，1 - 表示连接已建立，可以进行通信，2 - 表示连接正在进行关闭，3 - 表示连接已经关闭或者连接不能打开
       if (buffer && this.socket && this.socket.readyState === 1) {
-        if (this.mode === 0) {
-          this.socket.send(buffer)
-        } else {
-          // 转化后的base64
-          const base64 = this.arrayBufferToBase64(buffer)
-          this.uploadAudio(base64)
-        }
+        this.socket.send(buffer)
       }
-    },
-    uploadAudio(baseStr) {
-      const dataMsg = {
-        header: {
-          cmd: 'MSG_GATEWAY_CLIENT_TALK_STREAM',
-          time: new Date().getTime()
-        },
-        data: {
-          imei: this.options.imei,
-          // 默认第一通道
-          chn: this.options.chn,
-          // eslint-disable-next-line camelcase
-          codec: MEDIA_TYPE,
-          // eslint-disable-next-line camelcase
-          sample_rate: this.sampleRate,
-          // eslint-disable-next-line camelcase
-          sample_format: this.bitRate / 8 - 1,
-          buffer: baseStr
-        }
-      }
-      const json = JSON.stringify(dataMsg)
-      this.socket.send(json)
     }
   },
   watch: {

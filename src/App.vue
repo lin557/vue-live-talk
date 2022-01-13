@@ -1,11 +1,7 @@
 <template>
   <div id="app">
     <div class="center">
-      <vue-live-talk
-        :sampleRate="sampleRateValue"
-        :mode="modeValue"
-        ref="talk"
-      />
+      <vue-live-talk :sampleRate="sampleRateValue" ref="talk" />
     </div>
     <div class="around">
       <div class="device">
@@ -34,27 +30,6 @@
       </div>
     </div>
     <div class="around">
-      <div class="mode">
-        <label for="mode">Binary</label>
-        <input
-          type="radio"
-          name="mode"
-          checked="checked"
-          value="0"
-          v-model="mode"
-          :disabled="disabled"
-        />
-        <label for="mode">String</label>
-        <input
-          type="radio"
-          name="mode"
-          value="1"
-          v-model="mode"
-          :disabled="disabled"
-        />
-      </div>
-    </div>
-    <div class="around">
       <button @click="talk">打开对讲</button>
       <button @click="close">关闭对讲</button>
     </div>
@@ -80,8 +55,7 @@ export default {
   data() {
     return {
       disabled: false,
-      mode: 0,
-      imei: '15981010784',
+      imei: '10007012346',
       chn: 1,
       url: 'ws://localhost:9090/ws/talk',
       // eslint-disable-next-line camelcase
