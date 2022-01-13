@@ -25,13 +25,12 @@
     </div>
     <div class="around">
       <div class="device">
-        <label for="sample_rate">Sample Rate</label>
-        <input
-          type="text"
-          name="sample_rate"
-          v-model="sample_rate"
-          :disabled="disabled"
-        />
+        <label>Sample Rate</label>
+        <select v-model="sample_rate" :disabled="disabled">
+          <option v-for="option in sample_list" :key="option.id">
+            {{ option.val }}
+          </option>
+        </select>
       </div>
     </div>
     <div class="around">
@@ -84,9 +83,19 @@ export default {
       mode: 0,
       imei: '15981010784',
       chn: 1,
-      url: 'ws://localhost:9095/ws/talk',
+      url: 'ws://localhost:9090/ws/talk',
       // eslint-disable-next-line camelcase
-      sample_rate: 8000
+      sample_rate: 8000,
+      // eslint-disable-next-line camelcase
+      sample_list: [
+        { id: 0, val: 8000 },
+        { id: 1, val: 11025 },
+        { id: 2, val: 16000 },
+        { id: 3, val: 22050 },
+        { id: 4, val: 32000 },
+        { id: 5, val: 44100 },
+        { id: 6, val: 48000 }
+      ]
     }
   },
   methods: {
@@ -130,28 +139,33 @@ export default {
   button {
     margin-left: 5px;
     margin-right: 5px;
+    padding: 5px;
+    width: 80px;
   }
 
   input {
     padding: 5px;
   }
+
+  select {
+    padding: 5px;
+    margin-left: 5px;
+    width: 90px;
+  }
 }
 
 .device {
-  margin-left: 5px;
-  margin-right: 5px;
   input {
     width: 90px;
-    margin-left: 10px;
+    margin-left: 8px;
+    margin-right: 8px;
   }
 }
 
 .url {
-  margin-left: 5px;
-  margin-right: 5px;
   input {
     width: 280px;
-    margin-left: 10px;
+    margin-left: 8px;
   }
 }
 
