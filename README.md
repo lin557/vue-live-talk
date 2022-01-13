@@ -42,7 +42,6 @@ Vue.use(VueLiveTalk)
 <template>
   <div>
     <VueLiveTalk
-      :mode="0"
       :sampleRate="16000"
       ref="talk"
     />
@@ -89,7 +88,6 @@ export default {
 
 | Property    | Description                                                 | Type   | Default |
 | :---------- | ----------------------------------------------------------- | :----- | :------ |
-| mode        | 0 = Binary Mode, 1 = Text Mode                              | number | 0       |
 | sample_rate | Sample rate. 8000, 11025, 16000, 22050, 32000, 44100, 48000 | number | 8000    |
 | local       | localized configuration                                     | object |         |
 
@@ -110,6 +108,7 @@ export default {
 | errHttps     | Need https                       | 无权录音(需https)    |
 | errSocket    | Websocket error                  | 连接错误             |
 | init         | init                             | 未启动               |
+| kickout      | kickout                          | 会话冲突             |
 | noAllow      | User denied recording permission | 用户拒绝录音权限     |
 | noMic        | No microphone available          | 无可用麦克风         |
 | talking      | Talking                          | 通话中               |

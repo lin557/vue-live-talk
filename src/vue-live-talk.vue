@@ -89,7 +89,7 @@ export default {
      */
     sampleRate: {
       type: Number,
-      default: 8000
+      default: 16000
     }
   },
   data() {
@@ -269,12 +269,25 @@ export default {
         // 注意ws、wss使用不同的端口。我使用自签名的证书测试，
         // 无法使用wss，浏览器打开WebSocket时报错
         // ws对应http、wss对应https。
+        const sTmp = this.options.url.substr(
+          this.options.url.length - 1,
+          this.options.url.length
+        )
+        if (sTmp === '/') {
+          this.options.url = this.options.url.substr(
+            0,
+            this.options.url.length - 1
+          )
+        }
+        console.log(this.options.url)
         this.socket = new WebSocket(
           this.options.url +
             '/' +
             this.options.imei +
             '?codec=pcm&sample_rate=' +
-            this.sampleRate
+            this.sampleRate +
+            '&chn=' +
+            this.options.chn
         )
         // 连接打开事件
         this.socket.onopen = () => {
