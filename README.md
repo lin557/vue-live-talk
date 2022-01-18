@@ -17,6 +17,10 @@ Demo:  https://lin557.github.io/vue-live-talk/demo/
 
 
 
+关于录音，使用 [xiangyuecn](https://github.com/xiangyuecn) 大神的代码，地址: https://github.com/xiangyuecn/Recorder
+
+
+
 ## Installation
 
 
@@ -67,7 +71,7 @@ export default {
   data() {
     return {
       imei: '12345',
-      chn: 1,
+      chn: 0,
       url: 'ws://localhost:9095/ws/talk',
     }
   },
@@ -145,7 +149,7 @@ param = {
 | -------- | ---------------------- | ------ | ------- |
 | url      | ws url                 | string | any     |
 | imei     | Device imei/sim number | string | any     |
-| chn      | Device channel number  | number | 1       |
+| chn      | Device channel number  | number | 0       |
 
 
 
