@@ -56,7 +56,7 @@ export default {
     return {
       disabled: false,
       imei: '10007012346',
-      chn: 1,
+      chn: 0,
       url: 'ws://localhost:9090/ws/talk',
       // eslint-disable-next-line camelcase
       sample_rate: 8000,

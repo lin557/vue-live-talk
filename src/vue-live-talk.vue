@@ -52,7 +52,7 @@ const MEDIA_TYPE = 'pcm'
 const DEFAULTS = {
   url: 'ws://localhost:9090/ws/talk',
   imei: '10007012346',
-  chn: 1
+  chn: 0
 }
 
 export default {
@@ -76,9 +76,10 @@ export default {
           init: '未启动',
           noAllow: '用户拒绝录音权限',
           noMic: '无可用麦克风',
+          offline: '终端掉线',
           talking: '通话中',
           timeout: '终端超时',
-          killout: '会话冲突'
+          kickout: '会话冲突'
         }
       }
     },
@@ -159,7 +160,10 @@ export default {
           ret = this.local.errCodec
           break
         case 3004:
-          ret = this.local.killout
+          ret = this.local.kickout
+          break
+        case 3005:
+          ret = this.local.offline
           break
       }
       return ret
@@ -279,7 +283,6 @@ export default {
             this.options.url.length - 1
           )
         }
-        console.log(this.options.url)
         this.socket = new WebSocket(
           this.options.url +
             '/' +
@@ -489,7 +492,7 @@ export default {
   },
   watch: {
     status(val) {
-      if (val > 2999) {
+      if (val === 3 || val === 4 || val > 2999) {
         this.close(true)
       }
     }

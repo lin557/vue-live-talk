@@ -1,6 +1,6 @@
 {
   "name": "vue-live-talk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JT/T 1078 voice talk uses websocket",
   "private": false,
   "main": "dist/vue-live-talk.umd.js",
