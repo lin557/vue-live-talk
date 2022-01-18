@@ -1,4 +1,13 @@
-vue-live-talk
+<p align="center">
+  <a href="https://www.npmjs.org/package/vue-live-talk">
+    <img src="https://img.shields.io/npm/v/vue-live-talk.svg">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+  </a>
+</p>
+
+# vue-live-talk
 
 1078 websocket 实时对讲
 
